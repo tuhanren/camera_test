@@ -1,47 +1,54 @@
 import streamlit as st
 from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
 from pyzbar.pyzbar import decode
-import cv2
+from PIL import Image
 import numpy as np
+import cv2
 
+st.title("条形码扫描应用")
+
+# 用于存储拍摄的图像
+captured_image = st.empty()
 
 class VideoTransformer(VideoTransformerBase):
     def __init__(self):
-        self.barcode_info = None
+        self.image = None
 
     def transform(self, frame):
         img = frame.to_ndarray(format="bgr24")
-        decoded_objects = decode(img)
-
-        for obj in decoded_objects:
-            # Draw rectangle around the barcode
-            (x, y, w, h) = obj.rect
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-            # Display the barcode data
-            barcode_data = obj.data.decode("utf-8")
-            barcode_type = obj.type
-            text = f"{barcode_data} ({barcode_type})"
-            cv2.putText(img, text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-            self.barcode_info = text
-
+        self.image = img
         return img
 
-    def get_barcode_info(self):
-        return self.barcode_info
-
-
-st.title("条形码扫描应用")
-st.write("使用摄像头扫描条形码")
+    def get_image(self):
+        return self.image
 
 # 实例化 VideoTransformer
 video_transformer = VideoTransformer()
 
 webrtc_ctx = webrtc_streamer(key="barcode-scanner", video_transformer_factory=lambda: video_transformer)
 
-if webrtc_ctx.video_transformer:
-    barcode_info = video_transformer.get_barcode_info()
-    if barcode_info:
-        st.write("识别到的条形码信息：")
-        st.write(barcode_info)
+if st.button("拍照"):
+    if webrtc_ctx.video_transformer:
+        image = video_transformer.get_image()
+        if image is not None:
+            # 将图片显示出来
+            st.image(image, channels="BGR")
+            captured_image.image(image, channels="BGR")
+
+            # 保存图片
+            img_pil = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+            img_pil.save("captured_image.png")
+
+            # 读取保存的图片并解码条形码
+            image_path = "captured_image.png"
+            img_pil = Image.open(image_path)
+            barcodes = decode(img_pil)
+            if barcodes:
+                st.write("识别到的条形码信息：")
+                for barcode in barcodes:
+                    barcode_data = barcode.data.decode("utf-8")
+                    st.write(barcode_data)
+            else:
+                st.write("未能识别条形码。")
+        else:
+            st.write("无法获取图像，请重试。")
