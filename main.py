@@ -14,11 +14,11 @@ def main():
     if picture:
         # 保存拍摄的图像
         img = Image.open(picture)
-        img.save("captured_image.png")
+        # img.save("captured_image.png")
 
         # 读取保存的图像并解码条形码
-        image_path = "captured_image.png"
-        img = Image.open(image_path)
+        # image_path = "captured_image.png"
+        img = Image.open(picture)
         barcodes = decode(img)
 
         if barcodes:
