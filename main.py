@@ -1,44 +1,47 @@
 import streamlit as st
-import imageio
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
 from pyzbar.pyzbar import decode
-from PIL import Image
+import cv2
+import numpy as np
+
+
+class VideoTransformer(VideoTransformerBase):
+    def __init__(self):
+        self.barcode_info = None
+
+    def transform(self, frame):
+        img = frame.to_ndarray(format="bgr24")
+        decoded_objects = decode(img)
+
+        for obj in decoded_objects:
+            # Draw rectangle around the barcode
+            (x, y, w, h) = obj.rect
+            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+            # Display the barcode data
+            barcode_data = obj.data.decode("utf-8")
+            barcode_type = obj.type
+            text = f"{barcode_data} ({barcode_type})"
+            cv2.putText(img, text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+            self.barcode_info = text
+
+        return img
+
+    def get_barcode_info(self):
+        return self.barcode_info
+
 
 st.title("条形码扫描应用")
-
 st.write("使用摄像头扫描条形码")
 
-# 启用摄像头并拍照
-def capture_image():
-    st.write("请允许摄像头权限，并按按钮拍照")
-    cam = imageio.get_reader('<video0>')
-    for i, image in enumerate(cam):
-        st.image(image)
-        if st.button("拍照"):
-            img_name = "captured_image.png"
-            imageio.imwrite(img_name, image)
-            return img_name
+# 实例化 VideoTransformer
+video_transformer = VideoTransformer()
 
-def decode_barcode(image_path):
-    image = Image.open(image_path)
-    barcodes = decode(image)
-    barcode_info = []
-    for barcode in barcodes:
-        barcode_data = barcode.data.decode("utf-8")
-        barcode_info.append(barcode_data)
-    return barcode_info
+webrtc_ctx = webrtc_streamer(key="barcode-scanner", video_transformer_factory=lambda: video_transformer)
 
-# Streamlit 主逻辑
-if st.button("启用摄像头并拍照"):
-    img_path = capture_image()
-    if img_path:
-        st.write("拍照成功！")
-        st.image(img_path)
-        barcode_info = decode_barcode(img_path)
-        if barcode_info:
-            st.write("识别到的条形码信息：")
-            for info in barcode_info:
-                st.write(info)
-        else:
-            st.write("未能识别条形码。")
-    else:
-        st.write("拍照失败，请重试。")
+if webrtc_ctx.video_transformer:
+    barcode_info = video_transformer.get_barcode_info()
+    if barcode_info:
+        st.write("识别到的条形码信息：")
+        st.write(barcode_info)
