@@ -2,7 +2,6 @@ import streamlit as st
 import imageio
 from pyzbar.pyzbar import decode
 from PIL import Image
-import numpy as np
 
 st.title("条形码扫描应用")
 
