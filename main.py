@@ -18,9 +18,10 @@ def main():
 
         # 读取保存的图像并解码条形码
         # image_path = "captured_image.png"
+        st.image(picture)
         img = Image.open(picture)
         st.write(img)
-        barcodes = decode(cv2.imread(img))
+        barcodes = decode(img)
         st.write(barcodes)
 
         if barcodes:
