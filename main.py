@@ -1,7 +1,7 @@
 import streamlit as st
 from pyzbar.pyzbar import decode
 from PIL import Image
-# import cv2
+import cv2
 # import numpy as np
 
 def main():
@@ -19,7 +19,9 @@ def main():
         # 读取保存的图像并解码条形码
         # image_path = "captured_image.png"
         img = Image.open(picture)
-        barcodes = decode(img)
+        st.write(img)
+        barcodes = decode(cv2.imread(img))
+        st.write(barcodes)
 
         if barcodes:
             st.write("识别到的条形码信息：")
