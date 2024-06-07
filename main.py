@@ -13,7 +13,7 @@ def main():
 
     if picture:
         # 保存拍摄的图像
-        img = Image.open(picture)
+        # img = Image.open(picture)
         # img.save("captured_image.png")
 
         # 读取保存的图像并解码条形码
