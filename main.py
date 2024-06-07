@@ -20,7 +20,7 @@ def main():
         # image_path = "captured_image.png"
         st.image(picture)
         img = Image.open(picture)
-        st.write(img)
+        # st.write(img)
         barcodes = decode(img)
         st.write(barcodes)
 
